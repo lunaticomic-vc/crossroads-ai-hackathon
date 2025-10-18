@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Crossroads - AI Puzzle Game</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Word Crossroads</h1>
+            <p class="subtitle">Connect words through shared letters and logical relationships</p>
+        </header>
+
+        <div class="game-info">
+            <div class="info-card">
+                <h3>Connection Types</h3>
+                <ul id="connection-types">
+                    <li><span class="badge semantic">Semantic</span> - Related meanings</li>
+                    <li><span class="badge pattern">Pattern</span> - Letter sequences</li>
+                    <li><span class="badge category">Category</span> - Same group</li>
+                    <li><span class="badge sequential">Sequential</span> - Time/Process</li>
+                    <li><span class="badge phonetic">Phonetic</span> - Similar sounds</li>
+                    <li><span class="badge etymological">Etymology</span> - Word roots</li>
+                </ul>
+            </div>
+            <div class="info-card">
+                <h3>Game Status</h3>
+                <p><strong>Words Filled:</strong> <span id="words-filled">0</span> / <span id="total-words">0</span></p>
+                <p><strong>Status:</strong> <span id="game-status">Ready</span></p>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="new-game-btn" class="btn btn-primary">New Game</button>
+            <button id="validate-btn" class="btn btn-success" disabled>Validate Puzzle</button>
+            <button id="hint-btn" class="btn btn-info">Show Hint</button>
+        </div>
+
+        <div id="game-container">
+            <canvas id="game-canvas"></canvas>
+        </div>
+
+        <div id="input-modal" class="modal">
+            <div class="modal-content">
+                <h3>Fill in the word</h3>
+                <p>Position: <span id="modal-position"></span></p>
+                <p>Length: <span id="modal-length"></span> letters</p>
+                <p>Connecting letter: <span id="modal-connection"></span></p>
+                <input type="text" id="word-input" placeholder="Enter word" maxlength="20">
+                <div class="modal-buttons">
+                    <button id="submit-word-btn" class="btn btn-primary">Submit</button>
+                    <button id="cancel-btn" class="btn btn-secondary">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="result-modal" class="modal">
+            <div class="modal-content">
+                <h3 id="result-title">Validation Result</h3>
+                <div id="result-content"></div>
+                <button id="close-result-btn" class="btn btn-primary">Close</button>
+            </div>
+        </div>
+
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Generating puzzle...</p>
+        </div>
+    </div>
+
+    <script type="module" src="js/game.js"></script>
+</body>
+</html>

@@ -2,34 +2,43 @@
 
 Railway is the easiest way to deploy your Word Crossroads game.
 
-## Step 1: Prepare Your Code
+## ✅ Step 1: Code is Ready!
 
-1. Make sure your code is pushed to GitHub
-2. Ensure all environment variables are documented
+Your code has been committed and pushed to GitHub successfully!
 
-## Step 2: Deploy to Railway
+## 🚀 Step 2: Deploy to Railway (Choose Option A or B)
 
-### Option A: One-Click Deploy
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/your-template-url)
+### Option A: Manual Deploy via Dashboard (Recommended)
 
-### Option B: Manual Deploy
+1. **Create Railway Account**: Go to [railway.app](https://railway.app) and sign up/login
 
-1. **Create Railway Account**: Go to [railway.app](https://railway.app)
+2. **Create New Project**: 
+   - Click "New Project" 
+   - Select "Deploy from GitHub repo"
+   - Choose your `crossroads-ai-hackathon` repository
 
-2. **Create New Project**: Click "New Project" → "Deploy from GitHub repo"
-
-3. **Connect Repository**: Select your `crossroads-ai-hackathon` repo
-
-4. **Set Environment Variables**:
+3. **Configure Environment Variables** in Railway dashboard:
+   ```
+   SESSION_SECRET=your_random_secret_here_123456789
+   NODE_ENV=production
+   ```
+   
+   **Optional (for Google Sign-In):**
    ```
    OPENAI_API_KEY=your_openai_api_key_here
    GOOGLE_CLIENT_ID=your_google_client_id_here
    GOOGLE_CLIENT_SECRET=your_google_client_secret_here
-   SESSION_SECRET=your_random_secret_here
-   NODE_ENV=production
    ```
 
-5. **Deploy**: Railway will automatically build and deploy your app
+4. **Deploy**: Railway will automatically build and deploy your app
+
+### Option B: CLI Deploy
+```bash
+npm install -g @railway/cli
+railway login
+railway init
+railway up
+```
 
 ## Step 3: Configure Google OAuth
 

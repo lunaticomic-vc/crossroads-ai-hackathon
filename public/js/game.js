@@ -902,14 +902,18 @@ class WordCrossroadsGame {
             const config = await response.json();
             
             if (!config.authEnabled || !config.googleClientId) {
-                console.log('Google authentication not configured');
+                console.log('Google authentication not configured - showing guest mode only');
                 // Hide Google sign-in button and show guest option only
                 document.getElementById('google-signin-btn').style.display = 'none';
+                const loginContent = document.querySelector('.login-content p');
+                if (loginContent) {
+                    loginContent.textContent = 'Continue as guest to play the Word Crossroads game!';
+                }
                 return;
             }
             
-            // Initialize Google Sign-In
-            window.onGoogleLibraryLoad = () => {
+            // Initialize Google Sign-In when library loads
+            const initializeGoogleSignIn = () => {
                 google.accounts.id.initialize({
                     client_id: config.googleClientId,
                     callback: this.handleGoogleSignIn.bind(this)
@@ -925,11 +929,31 @@ class WordCrossroadsGame {
                         width: 300
                     }
                 );
+                
+                console.log('Google Sign-In initialized successfully');
             };
 
-            // Load Google library if not already loaded
+            // Wait for Google library to load
             if (typeof google !== 'undefined' && google.accounts) {
-                window.onGoogleLibraryLoad();
+                initializeGoogleSignIn();
+            } else {
+                // Wait for Google library to load
+                window.onGoogleLibraryLoad = initializeGoogleSignIn;
+                
+                // Fallback: check periodically if library loaded
+                let checkCount = 0;
+                const checkInterval = setInterval(() => {
+                    checkCount++;
+                    if (typeof google !== 'undefined' && google.accounts) {
+                        clearInterval(checkInterval);
+                        initializeGoogleSignIn();
+                    } else if (checkCount > 20) {
+                        clearInterval(checkInterval);
+                        console.warn('Google Sign-In library failed to load');
+                        document.getElementById('google-signin-btn').innerHTML = 
+                            '<p style="color: #ef4444;">Google Sign-In unavailable</p>';
+                    }
+                }, 500);
             }
         } catch (error) {
             console.error('Error setting up Google Sign-In:', error);

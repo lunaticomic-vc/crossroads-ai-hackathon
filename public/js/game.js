@@ -55,6 +55,9 @@ class WordCrossroadsGame {
         this.canvas.addEventListener('click', (e) => this.handleCanvasClick(e));
         this.canvas.addEventListener('mousemove', (e) => this.handleCanvasHover(e));
         
+        // Initialize hover state
+        this.hoveredNode = null;
+        
         // Modal listeners
         document.getElementById('submit-word-btn').addEventListener('click', () => this.submitWord());
         document.getElementById('cancel-btn').addEventListener('click', () => this.closeModal());
@@ -113,18 +116,13 @@ class WordCrossroadsGame {
     resizeCanvas() {
         const container = document.getElementById('game-container');
         const maxWidth = container.clientWidth - 40;
-        const maxHeight = 700;
+        const maxHeight = 600;
         
-        if (this.gameState && this.gameState.grid) {
-            const gridWidth = this.gameState.gridSize.cols * this.cellSize + this.padding * 2;
-            const gridHeight = this.gameState.gridSize.rows * this.cellSize + this.padding * 2;
-            
-            this.canvas.width = Math.min(gridWidth, maxWidth);
-            this.canvas.height = Math.min(gridHeight, maxHeight);
-        } else {
-            this.canvas.width = maxWidth;
-            this.canvas.height = maxHeight;
-        }
+        this.canvas.width = maxWidth;
+        this.canvas.height = maxHeight;
+        
+        // Reset word positions so they get recalculated
+        this.wordPositions = null;
         
         this.render();
     }
@@ -257,16 +255,12 @@ class WordCrossroadsGame {
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
         
-        const cell = this.getCellAtPosition(x, y);
-        if (!cell) return;
-        
-        const word = this.gameState.words.find(w => 
-            this.isPositionInWord(cell.row, cell.col, w)
-        );
-        
-        if (word && !word.revealed && !word.userWord) {
-            this.selectedCell = cell;
-            this.showWordInputModal(word);
+        const nodeIndex = this.getNodeAtPosition(x, y);
+        if (nodeIndex !== null) {
+            const word = this.gameState.words[nodeIndex];
+            if (!word.revealed && !word.userWord) {
+                this.showWordInputModal(word);
+            }
         }
     }
 
@@ -277,51 +271,39 @@ class WordCrossroadsGame {
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
         
-        const cell = this.getCellAtPosition(x, y);
-        this.hoveredCell = cell;
+        const nodeIndex = this.getNodeAtPosition(x, y);
+        this.hoveredNode = nodeIndex;
         this.render();
     }
 
-    getCellAtPosition(x, y) {
-        const col = Math.floor((x - this.padding) / this.cellSize);
-        const row = Math.floor((y - this.padding) / this.cellSize);
+    getNodeAtPosition(x, y) {
+        if (!this.wordPositions) return null;
         
-        if (row >= 0 && row < this.gameState.gridSize.rows && 
-            col >= 0 && col < this.gameState.gridSize.cols) {
-            return { row, col };
+        for (let i = 0; i < this.wordPositions.length; i++) {
+            const pos = this.wordPositions[i];
+            const distance = Math.sqrt((x - pos.x) ** 2 + (y - pos.y) ** 2);
+            if (distance <= 40) { // Node radius
+                return i;
+            }
         }
         return null;
-    }
-
-    isPositionInWord(row, col, word) {
-        const { position, direction } = word;
-        const length = word.word.length;
-        
-        if (direction === 'horizontal') {
-            return row === position.row && 
-                   col >= position.col && 
-                   col < position.col + length;
-        } else {
-            return col === position.col && 
-                   row >= position.row && 
-                   row < position.row + length;
-        }
     }
 
     showWordInputModal(word) {
         const modal = document.getElementById('input-modal');
         const input = document.getElementById('word-input');
         
-        document.getElementById('modal-position').textContent = 
-            `Row ${word.position.row + 1}, Col ${word.position.col + 1}`;
+        // Find the word index for display
+        const wordIndex = this.gameState.words.findIndex(w => w.id === word.id);
+        document.getElementById('modal-position').textContent = `Node ${wordIndex + 1}`;
         document.getElementById('modal-length').textContent = word.word.length;
         
-        // Find connecting letter
+        // Find connections to revealed words
         const connections = this.gameState.connections.filter(c => 
             c.word1 === word.id || c.word2 === word.id
         );
         
-        let connectingInfo = 'None visible yet';
+        let connectingInfo = 'Discover the connections!';
         if (connections.length > 0) {
             const revealedConnections = connections.filter(c => {
                 const otherWordId = c.word1 === word.id ? c.word2 : c.word1;
@@ -331,26 +313,30 @@ class WordCrossroadsGame {
             
             if (revealedConnections.length > 0) {
                 const conn = revealedConnections[0];
-                connectingInfo = conn.sharedLetter;
+                const otherWordId = conn.word1 === word.id ? conn.word2 : conn.word1;
+                const otherWord = this.gameState.words.find(w => w.id === otherWordId);
+                const otherWordText = otherWord.revealed ? otherWord.word : otherWord.userWord;
+                connectingInfo = `Connected to "${otherWordText}" by ${conn.connectionType}`;
             }
         }
         
         document.getElementById('modal-connection').textContent = connectingInfo;
         
-        input.value = '';
-        input.setAttribute('maxlength', word.word.length);
-        modal.classList.add('active');
+        input.value = word.userWord || '';
         input.focus();
+        modal.style.display = 'block';
         
-        this.currentWordToFill = word;
+        this.currentEditingWord = word;
     }
 
     submitWord() {
         const input = document.getElementById('word-input');
         const word = input.value.trim().toUpperCase();
         
-        if (word.length !== this.currentWordToFill.word.length) {
-            alert(`Word must be exactly ${this.currentWordToFill.word.length} letters long.`);
+        if (!this.currentEditingWord) return;
+        
+        if (word.length !== this.currentEditingWord.word.length) {
+            alert(`Word must be exactly ${this.currentEditingWord.word.length} letters long.`);
             return;
         }
         
@@ -359,19 +345,19 @@ class WordCrossroadsGame {
             return;
         }
         
-        this.currentWordToFill.userWord = word;
+        this.currentEditingWord.userWord = word;
         this.closeModal();
         this.updateGameInfo();
         this.render();
     }
 
     closeModal() {
-        document.getElementById('input-modal').classList.remove('active');
-        this.currentWordToFill = null;
+        document.getElementById('input-modal').style.display = 'none';
+        this.currentEditingWord = null;
     }
 
     closeResultModal() {
-        document.getElementById('result-modal').classList.remove('active');
+        document.getElementById('result-modal').style.display = 'none';
     }
 
     updateGameInfo() {
@@ -436,110 +422,163 @@ class WordCrossroadsGame {
     }
 
     drawGrid() {
-        const { rows, cols } = this.gameState.gridSize;
-        
-        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+        // No grid needed for graph visualization
+        // Draw a subtle background pattern instead
+        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
         this.ctx.lineWidth = 1;
         
-        for (let row = 0; row <= rows; row++) {
-            this.ctx.beginPath();
-            this.ctx.moveTo(this.padding, this.padding + row * this.cellSize);
-            this.ctx.lineTo(this.padding + cols * this.cellSize, this.padding + row * this.cellSize);
-            this.ctx.stroke();
-        }
-        
-        for (let col = 0; col <= cols; col++) {
-            this.ctx.beginPath();
-            this.ctx.moveTo(this.padding + col * this.cellSize, this.padding);
-            this.ctx.lineTo(this.padding + col * this.cellSize, this.padding + rows * this.cellSize);
-            this.ctx.stroke();
+        // Draw a subtle dot pattern
+        for (let x = 50; x < this.canvas.width; x += 50) {
+            for (let y = 50; y < this.canvas.height; y += 50) {
+                this.ctx.beginPath();
+                this.ctx.arc(x, y, 1, 0, 2 * Math.PI);
+                this.ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+                this.ctx.fill();
+            }
         }
     }
 
     drawWords() {
-        this.gameState.words.forEach(word => {
-            const displayWord = word.revealed ? word.word : (word.userWord || '_'.repeat(word.word.length));
-            const { row, col } = word.position;
+        if (!this.wordPositions) {
+            this.calculateWordPositions();
+        }
+
+        this.gameState.words.forEach((word, index) => {
+            const pos = this.wordPositions[index];
+            const isRevealed = word.revealed || word.userWord;
+            const displayText = word.revealed ? word.word : (word.userWord || '?'.repeat(word.word.length));
             
-            for (let i = 0; i < displayWord.length; i++) {
-                const cellRow = word.direction === 'horizontal' ? row : row + i;
-                const cellCol = word.direction === 'horizontal' ? col + i : col;
-                
-                const x = this.padding + cellCol * this.cellSize;
-                const y = this.padding + cellRow * this.cellSize;
-                
-                // Highlight hovered cell
-                if (this.hoveredCell && 
-                    this.hoveredCell.row === cellRow && 
-                    this.hoveredCell.col === cellCol) {
-                    this.ctx.fillStyle = 'rgba(99, 102, 241, 0.3)';
-                    this.ctx.fillRect(x, y, this.cellSize, this.cellSize);
-                }
-                
-                // Cell background
-                if (word.revealed) {
-                    this.ctx.fillStyle = 'rgba(16, 185, 129, 0.2)';
-                } else if (word.userWord) {
-                    this.ctx.fillStyle = 'rgba(99, 102, 241, 0.2)';
-                } else {
-                    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-                }
-                this.ctx.fillRect(x + 1, y + 1, this.cellSize - 2, this.cellSize - 2);
-                
-                // Letter
-                this.ctx.fillStyle = word.revealed ? '#10b981' : (word.userWord ? '#6366f1' : '#666');
-                this.ctx.font = 'bold 24px Arial';
-                this.ctx.textAlign = 'center';
-                this.ctx.textBaseline = 'middle';
-                this.ctx.fillText(
-                    displayWord[i],
-                    x + this.cellSize / 2,
-                    y + this.cellSize / 2
-                );
+            // Draw node circle
+            this.ctx.beginPath();
+            this.ctx.arc(pos.x, pos.y, 40, 0, 2 * Math.PI);
+            
+            // Node background color based on state
+            if (word.revealed) {
+                this.ctx.fillStyle = 'rgba(16, 185, 129, 0.8)'; // Green for revealed
+            } else if (word.userWord) {
+                this.ctx.fillStyle = 'rgba(99, 102, 241, 0.8)'; // Blue for user input
+            } else {
+                this.ctx.fillStyle = 'rgba(75, 85, 99, 0.8)'; // Gray for unknown
             }
+            
+            this.ctx.fill();
+            
+            // Node border
+            this.ctx.strokeStyle = isRevealed ? '#10b981' : '#374151';
+            this.ctx.lineWidth = 2;
+            this.ctx.stroke();
+            
+            // Hover effect
+            if (this.hoveredNode === index) {
+                this.ctx.strokeStyle = '#fbbf24';
+                this.ctx.lineWidth = 3;
+                this.ctx.stroke();
+            }
+            
+            // Word text
+            this.ctx.fillStyle = '#ffffff';
+            this.ctx.font = 'bold 12px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillText(displayText, pos.x, pos.y);
+            
+            // Word ID for debugging (small number)
+            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            this.ctx.font = '10px Arial';
+            this.ctx.fillText((index + 1).toString(), pos.x, pos.y - 50);
         });
+    }
+
+    calculateWordPositions() {
+        const centerX = this.canvas.width / 2;
+        const centerY = this.canvas.height / 2;
+        const radius = Math.min(this.canvas.width, this.canvas.height) * 0.3;
+        const wordCount = this.gameState.words.length;
+        
+        this.wordPositions = [];
+        
+        // Arrange words in a circle
+        for (let i = 0; i < wordCount; i++) {
+            const angle = (2 * Math.PI * i) / wordCount;
+            const x = centerX + radius * Math.cos(angle);
+            const y = centerY + radius * Math.sin(angle);
+            this.wordPositions.push({ x, y });
+        }
     }
 
     drawConnections() {
-        this.ctx.strokeStyle = 'rgba(139, 92, 246, 0.5)';
-        this.ctx.lineWidth = 2;
-        this.ctx.setLineDash([5, 5]);
+        if (!this.wordPositions) return;
+        
+        // Define connection type colors and styles
+        const connectionStyles = {
+            'Semantic Association': { color: '#3b82f6', dash: [10, 5], width: 3 },
+            'Categorical Membership': { color: '#10b981', dash: [], width: 4 },
+            'Letter Pattern Sharing': { color: '#f59e0b', dash: [5, 5], width: 2 },
+            'Sequential/Temporal': { color: '#8b5cf6', dash: [15, 5], width: 3 },
+            'Phonetic Similarity': { color: '#ef4444', dash: [2, 8], width: 2 },
+            'Etymological': { color: '#ec4899', dash: [20, 10], width: 2 }
+        };
         
         this.gameState.connections.forEach(conn => {
-            const word1 = this.gameState.words.find(w => w.id === conn.word1);
-            const word2 = this.gameState.words.find(w => w.id === conn.word2);
+            const word1Index = this.gameState.words.findIndex(w => w.id === conn.word1);
+            const word2Index = this.gameState.words.findIndex(w => w.id === conn.word2);
             
-            if (!word1 || !word2) return;
+            if (word1Index === -1 || word2Index === -1) return;
             
-            const pos1 = this.getWordCenter(word1);
-            const pos2 = this.getWordCenter(word2);
+            const pos1 = this.wordPositions[word1Index];
+            const pos2 = this.wordPositions[word2Index];
+            
+            const style = connectionStyles[conn.connectionType] || { color: '#6b7280', dash: [], width: 2 };
+            
+            // Draw connection line
+            this.ctx.strokeStyle = style.color;
+            this.ctx.lineWidth = style.width;
+            this.ctx.setLineDash(style.dash);
+            
+            // Calculate line endpoints (edge of circles, not center)
+            const angle = Math.atan2(pos2.y - pos1.y, pos2.x - pos1.x);
+            const startX = pos1.x + 40 * Math.cos(angle);
+            const startY = pos1.y + 40 * Math.sin(angle);
+            const endX = pos2.x - 40 * Math.cos(angle);
+            const endY = pos2.y - 40 * Math.sin(angle);
             
             this.ctx.beginPath();
-            this.ctx.moveTo(pos1.x, pos1.y);
-            this.ctx.lineTo(pos2.x, pos2.y);
+            this.ctx.moveTo(startX, startY);
+            this.ctx.lineTo(endX, endY);
             this.ctx.stroke();
+            
+            // Draw arrow head
+            const arrowLength = 10;
+            const arrowAngle = Math.PI / 6;
+            
+            this.ctx.beginPath();
+            this.ctx.moveTo(endX, endY);
+            this.ctx.lineTo(
+                endX - arrowLength * Math.cos(angle - arrowAngle),
+                endY - arrowLength * Math.sin(angle - arrowAngle)
+            );
+            this.ctx.moveTo(endX, endY);
+            this.ctx.lineTo(
+                endX - arrowLength * Math.cos(angle + arrowAngle),
+                endY - arrowLength * Math.sin(angle + arrowAngle)
+            );
+            this.ctx.stroke();
+            
+            // Draw connection type label
+            const midX = (startX + endX) / 2;
+            const midY = (startY + endY) / 2;
+            
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            this.ctx.fillRect(midX - 40, midY - 10, 80, 20);
+            
+            this.ctx.fillStyle = style.color;
+            this.ctx.font = '10px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillText(conn.connectionType.split(' ')[0], midX, midY);
         });
         
         this.ctx.setLineDash([]);
-    }
-
-    getWordCenter(word) {
-        const { row, col } = word.position;
-        const length = word.word.length;
-        
-        let centerRow, centerCol;
-        if (word.direction === 'horizontal') {
-            centerRow = row;
-            centerCol = col + length / 2;
-        } else {
-            centerRow = row + length / 2;
-            centerCol = col;
-        }
-        
-        return {
-            x: this.padding + centerCol * this.cellSize,
-            y: this.padding + centerRow * this.cellSize
-        };
     }
 
     selectTopic(topic) {

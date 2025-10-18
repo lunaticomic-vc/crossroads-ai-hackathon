@@ -137,13 +137,20 @@
                 <div class="info-card">
                     <h3>Connection Types</h3>
                     <ul id="connection-types">
-                        <li><span class="badge semantic">Semantic</span> - Related meanings</li>
-                        <li><span class="badge pattern">Pattern</span> - Letter sequences</li>
-                        <li><span class="badge category">Category</span> - Same group</li>
-                        <li><span class="badge sequential">Sequential</span> - Time/Process</li>
-                        <li><span class="badge phonetic">Phonetic</span> - Similar sounds</li>
-                        <li><span class="badge etymological">Etymology</span> - Word roots</li>
+                        <li><span class="badge semantic" style="background-color: #3b82f6;">Semantic</span> - Related meanings</li>
+                        <li><span class="badge category" style="background-color: #10b981;">Category</span> - Same group/type</li>
+                        <li><span class="badge pattern" style="background-color: #f59e0b;">Pattern</span> - Letter patterns</li>
+                        <li><span class="badge sequential" style="background-color: #8b5cf6;">Sequential</span> - Time/Process</li>
+                        <li><span class="badge phonetic" style="background-color: #ef4444;">Phonetic</span> - Similar sounds</li>
+                        <li><span class="badge etymological" style="background-color: #ec4899;">Etymology</span> - Word roots</li>
                     </ul>
+                </div>
+                <div class="info-card">
+                    <h3>How to Play</h3>
+                    <p><strong>Goal:</strong> Discover all word connections</p>
+                    <p><strong>Click a node</strong> to guess the word</p>
+                    <p><strong>Connections:</strong> Lines show relationships between words</p>
+                    <p><strong>Colors:</strong> Each line type represents a different connection</p>
                 </div>
                 <div class="info-card">
                     <h3>Game Status</h3>
@@ -165,9 +172,9 @@
             <div id="input-modal" class="modal">
                 <div class="modal-content">
                     <h3>Fill in the word</h3>
-                    <p>Position: <span id="modal-position"></span></p>
+                    <p>Node: <span id="modal-position"></span></p>
                     <p>Length: <span id="modal-length"></span> letters</p>
-                    <p>Connecting letter: <span id="modal-connection"></span></p>
+                    <p>Connection hint: <span id="modal-connection"></span></p>
                     <input type="text" id="word-input" placeholder="Enter word" maxlength="20">
                     <div class="modal-buttons">
                         <button id="submit-word-btn" class="btn btn-primary">Submit</button>

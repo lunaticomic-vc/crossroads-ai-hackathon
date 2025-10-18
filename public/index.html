@@ -5,9 +5,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Word Crossroads - AI Puzzle Game</title>
     <link rel="stylesheet" href="css/styles.css">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
     <div class="container">
+        <!-- User Info Bar -->
+        <div id="user-bar" class="user-bar" style="display: none;">
+            <div class="user-info">
+                <img id="user-avatar" class="user-avatar" src="" alt="User Avatar">
+                <div class="user-details">
+                    <span id="user-name" class="user-name"></span>
+                    <div class="streak-info">
+                        <span id="streak-current" class="streak-current">🔥 0 day streak</span>
+                        <span id="streak-longest" class="streak-longest">Best: 0 days</span>
+                    </div>
+                </div>
+            </div>
+            <button id="logout-btn" class="btn btn-secondary">Logout</button>
+        </div>
+
+        <!-- Login Section -->
+        <div id="login-section" class="login-section">
+            <div class="login-content">
+                <h2>🔥 Track Your Progress</h2>
+                <p>Sign in with Google to save your game progress and maintain your daily streak!</p>
+                <div id="google-signin-btn" class="google-signin-btn"></div>
+                <button id="skip-login-btn" class="btn btn-secondary">Continue as Guest</button>
+            </div>
+        </div>
         <!-- Topic Selection Screen -->
         <div id="topic-screen" class="topic-screen">
             <header>

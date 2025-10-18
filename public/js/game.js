@@ -9,6 +9,10 @@ class WordCrossroadsGame {
         this.selectedDifficulty = null;
         this.selectedTopic = null;
         
+        // User authentication state
+        this.user = null;
+        this.streak = null;
+        
         // Canvas settings
         this.cellSize = 50;
         this.padding = 40;
@@ -29,6 +33,8 @@ class WordCrossroadsGame {
         this.setupEventListeners();
         this.setupTopicSelection();
         this.setupDifficultySelection();
+        this.setupGoogleSignIn();
+        this.checkAuthStatus();
         this.resizeCanvas();
         window.addEventListener('resize', () => this.resizeCanvas());
     }
@@ -58,6 +64,16 @@ class WordCrossroadsGame {
         document.getElementById('custom-topic-btn').addEventListener('click', () => {
             console.log('Custom topic button clicked');
             this.handleCustomTopic();
+        });
+        
+        document.getElementById('skip-login-btn').addEventListener('click', () => {
+            console.log('Skip login button clicked');
+            this.skipLogin();
+        });
+        
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            console.log('Logout button clicked');
+            this.logout();
         });
         
         // Zoom control listeners
@@ -876,6 +892,175 @@ class WordCrossroadsGame {
         this.panX = 0;
         this.panY = 0;
         this.render();
+    }
+
+    // Authentication Methods
+    async setupGoogleSignIn() {
+        try {
+            // Fetch Google Client ID from server
+            const response = await fetch('/api/config');
+            const config = await response.json();
+            
+            if (!config.authEnabled || !config.googleClientId) {
+                console.log('Google authentication not configured');
+                // Hide Google sign-in button and show guest option only
+                document.getElementById('google-signin-btn').style.display = 'none';
+                return;
+            }
+            
+            // Initialize Google Sign-In
+            window.onGoogleLibraryLoad = () => {
+                google.accounts.id.initialize({
+                    client_id: config.googleClientId,
+                    callback: this.handleGoogleSignIn.bind(this)
+                });
+
+                google.accounts.id.renderButton(
+                    document.getElementById('google-signin-btn'),
+                    {
+                        theme: 'outline',
+                        size: 'large',
+                        type: 'standard',
+                        text: 'signin_with',
+                        width: 300
+                    }
+                );
+            };
+
+            // Load Google library if not already loaded
+            if (typeof google !== 'undefined' && google.accounts) {
+                window.onGoogleLibraryLoad();
+            }
+        } catch (error) {
+            console.error('Error setting up Google Sign-In:', error);
+            document.getElementById('google-signin-btn').style.display = 'none';
+        }
+    }
+
+    async handleGoogleSignIn(response) {
+        try {
+            console.log('Google Sign-In response received');
+            
+            const result = await fetch('/auth/google/verify', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify({ token: response.credential })
+            });
+
+            const data = await result.json();
+
+            if (data.success) {
+                this.user = data.user;
+                await this.loadUserStreak();
+                this.updateUserDisplay();
+                this.hideLoginSection();
+                console.log('User signed in successfully:', this.user.name);
+            } else {
+                console.error('Google Sign-In failed:', data.error);
+                this.showError('Sign-in failed. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error during Google Sign-In:', error);
+            this.showError('Sign-in failed. Please try again.');
+        }
+    }
+
+    async checkAuthStatus() {
+        try {
+            const response = await fetch('/api/user', {
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                this.user = data.user;
+                this.streak = data.streak;
+                this.updateUserDisplay();
+                this.hideLoginSection();
+            } else {
+                this.showLoginSection();
+            }
+        } catch (error) {
+            console.error('Error checking auth status:', error);
+            this.showLoginSection();
+        }
+    }
+
+    async loadUserStreak() {
+        try {
+            const response = await fetch('/api/streak', {
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                this.streak = await response.json();
+            }
+        } catch (error) {
+            console.error('Error loading user streak:', error);
+        }
+    }
+
+    updateUserDisplay() {
+        if (this.user) {
+            document.getElementById('user-bar').style.display = 'flex';
+            document.getElementById('user-name').textContent = this.user.name;
+            document.getElementById('user-avatar').src = this.user.picture;
+            
+            if (this.streak) {
+                document.getElementById('streak-current').textContent = `🔥 ${this.streak.current} day streak`;
+                document.getElementById('streak-longest').textContent = `Best: ${this.streak.longest} days`;
+            }
+        } else {
+            document.getElementById('user-bar').style.display = 'none';
+        }
+    }
+
+    showLoginSection() {
+        document.getElementById('login-section').style.display = 'flex';
+        document.getElementById('topic-screen').style.display = 'none';
+    }
+
+    hideLoginSection() {
+        document.getElementById('login-section').style.display = 'none';
+        document.getElementById('topic-screen').style.display = 'block';
+    }
+
+    skipLogin() {
+        this.hideLoginSection();
+        console.log('User chose to continue as guest');
+    }
+
+    async logout() {
+        try {
+            const response = await fetch('/auth/logout', {
+                method: 'POST',
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                this.user = null;
+                this.streak = null;
+                this.updateUserDisplay();
+                this.showLoginSection();
+                console.log('User logged out successfully');
+                
+                // Sign out from Google
+                if (typeof google !== 'undefined' && google.accounts) {
+                    google.accounts.id.disableAutoSelect();
+                }
+            }
+        } catch (error) {
+            console.error('Error during logout:', error);
+        }
+    }
+
+    showError(message) {
+        // You can implement a toast notification or modal here
+        console.error(message);
+        alert(message); // Simple alert for now
     }
 }
 

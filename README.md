@@ -5,6 +5,8 @@ An interactive word puzzle game where AI generates connected word graphs and pla
 ## 🎮 Game Features
 
 - **AI-Generated Puzzles**: OpenAI GPT-4 creates unique word puzzles with logical connections
+- **Google Sign-In**: Log in with your Google account to track your progress and maintain streaks
+- **Daily Streaks**: Track consecutive days of playing and completing puzzles
 - **Topic Selection**: Choose from preset topics or enter custom themes for personalized puzzles
 - **Difficulty Levels**: Easy, Medium, and Hard with varying complexity and word counts
 - **6 Connection Types**: Words connect through:
@@ -24,6 +26,7 @@ An interactive word puzzle game where AI generates connected word graphs and pla
 
 - Node.js (v16 or higher)
 - OpenAI API key
+- Google Cloud Project (for Google Sign-In)
 
 ### Installation
 
@@ -32,21 +35,40 @@ An interactive word puzzle game where AI generates connected word graphs and pla
    - Create an account or sign in
    - Generate an API key
 
-2. **Set up the project**
+2. **Set up Google OAuth (Optional)**
+   - Visit [Google Cloud Console](https://console.cloud.google.com/)
+   - Create a new project or select existing one
+   - Enable the Google+ API
+   - Create OAuth 2.0 credentials (Web application)
+   - Set authorized redirect URIs to: `http://localhost:3000/auth/google/callback`
+   - Note down the Client ID and Client Secret
+
+3. **Set up the project**
    ```bash
    # The dependencies are already installed
-   # Just configure your API key
+   # Just configure your environment variables
    ```
 
-3. **Configure environment variables**
+4. **Configure environment variables**
    
-   Create a `.env` file and add your API key:
+   Create a `.env` file based on `env-template.txt`:
    ```bash
+   # Required
    OPENAI_API_KEY=your_actual_api_key_here
+   SESSION_SECRET=your_super_secret_session_key_here
+   
+   # Optional (for Google Sign-In)
+   GOOGLE_CLIENT_ID=your_google_client_id_here
+   GOOGLE_CLIENT_SECRET=your_google_client_secret_here
+   GOOGLE_REDIRECT_URI=http://localhost:3000/auth/google/callback
+   
+   # Optional
    PORT=3000
+   NODE_ENV=development
+   CLIENT_URL=http://localhost:3000
    ```
 
-4. **Start the server**
+5. **Start the server**
    ```bash
    npm start
    ```

@@ -1,0 +1,22 @@
+# Google OAuth Configuration
+GOOGLE_CLIENT_ID=your_google_client_id_here
+GOOGLE_CLIENT_SECRET=your_google_client_secret_here
+GOOGLE_REDIRECT_URI=http://localhost:3000/auth/google/callback
+
+# Session Configuration
+SESSION_SECRET=your_super_secret_session_key_here
+
+# OpenAI Configuration (existing)
+OPENAI_API_KEY=your_openai_api_key_here
+
+# Application Configuration
+NODE_ENV=development
+CLIENT_URL=http://localhost:3000
+
+# Instructions:
+# 1. Create a Google Cloud Project at https://console.cloud.google.com/
+# 2. Enable the Google+ API
+# 3. Create OAuth 2.0 credentials (Web application)
+# 4. Set authorized redirect URIs to: http://localhost:3000/auth/google/callback
+# 5. Copy the Client ID and Client Secret to this file
+# 6. Replace 'your_super_secret_session_key_here' with a random string

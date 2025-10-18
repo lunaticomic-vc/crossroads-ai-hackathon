@@ -115,9 +115,23 @@ h1 {
 .controls {
     display: flex;
     justify-content: center;
+    align-items: center;
     gap: 15px;
     margin-bottom: 30px;
     animation: fadeIn 1s ease 0.4s both;
+    flex-wrap: wrap;
+}
+
+.zoom-controls {
+    display: flex;
+    gap: 8px;
+    margin-left: 20px;
+}
+
+.zoom-controls .btn {
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    min-width: 40px;
 }
 
 .btn {

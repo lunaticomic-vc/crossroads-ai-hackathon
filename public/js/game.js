@@ -13,6 +13,15 @@ class WordCrossroadsGame {
         this.cellSize = 50;
         this.padding = 40;
         
+        // Zoom and pan settings
+        this.zoomLevel = 1;
+        this.panX = 0;
+        this.panY = 0;
+        this.minZoom = 0.5;
+        this.maxZoom = 3;
+        this.isDragging = false;
+        this.lastMousePos = { x: 0, y: 0 };
+        
         this.init();
     }
 
@@ -51,9 +60,17 @@ class WordCrossroadsGame {
             this.handleCustomTopic();
         });
         
+        // Zoom control listeners
+        document.getElementById('zoom-in-btn').addEventListener('click', () => this.zoomIn());
+        document.getElementById('zoom-out-btn').addEventListener('click', () => this.zoomOut());
+        document.getElementById('reset-view-btn').addEventListener('click', () => this.resetView());
+        
         // Canvas listeners
         this.canvas.addEventListener('click', (e) => this.handleCanvasClick(e));
         this.canvas.addEventListener('mousemove', (e) => this.handleCanvasHover(e));
+        this.canvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
+        this.canvas.addEventListener('mouseup', (e) => this.handleMouseUp(e));
+        this.canvas.addEventListener('wheel', (e) => this.handleWheel(e));
         
         // Initialize hover state
         this.hoveredNode = null;
@@ -249,11 +266,11 @@ class WordCrossroadsGame {
     }
 
     handleCanvasClick(e) {
-        if (!this.gameState) return;
+        if (!this.gameState || this.isDragging) return;
         
         const rect = this.canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+        const x = (e.clientX - rect.left - this.panX) / this.zoomLevel;
+        const y = (e.clientY - rect.top - this.panY) / this.zoomLevel;
         
         const nodeIndex = this.getNodeAtPosition(x, y);
         if (nodeIndex !== null) {
@@ -268,11 +285,51 @@ class WordCrossroadsGame {
         if (!this.gameState) return;
         
         const rect = this.canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+        const x = (e.clientX - rect.left - this.panX) / this.zoomLevel;
+        const y = (e.clientY - rect.top - this.panY) / this.zoomLevel;
+        
+        if (this.isDragging) {
+            // Pan the view
+            this.panX += e.clientX - this.lastMousePos.x;
+            this.panY += e.clientY - this.lastMousePos.y;
+            this.lastMousePos = { x: e.clientX, y: e.clientY };
+            this.render();
+            return;
+        }
         
         const nodeIndex = this.getNodeAtPosition(x, y);
         this.hoveredNode = nodeIndex;
+        this.render();
+    }
+
+    handleMouseDown(e) {
+        this.isDragging = true;
+        this.lastMousePos = { x: e.clientX, y: e.clientY };
+        this.canvas.style.cursor = 'grabbing';
+    }
+
+    handleMouseUp(e) {
+        this.isDragging = false;
+        this.canvas.style.cursor = 'default';
+    }
+
+    handleWheel(e) {
+        e.preventDefault();
+        
+        const rect = this.canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        
+        // Calculate zoom
+        const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+        const newZoom = Math.max(this.minZoom, Math.min(this.maxZoom, this.zoomLevel * zoomFactor));
+        
+        // Zoom towards mouse position
+        const zoomChange = newZoom / this.zoomLevel;
+        this.panX = mouseX - (mouseX - this.panX) * zoomChange;
+        this.panY = mouseY - (mouseY - this.panY) * zoomChange;
+        
+        this.zoomLevel = newZoom;
         this.render();
     }
 
@@ -281,8 +338,12 @@ class WordCrossroadsGame {
         
         for (let i = 0; i < this.wordPositions.length; i++) {
             const pos = this.wordPositions[i];
+            const word = this.gameState.words[i];
+            const isSharedWord = pos.isShared || (word.chainIds && word.chainIds.length > 1);
+            const nodeRadius = isSharedWord ? 45 : 35;
+            
             const distance = Math.sqrt((x - pos.x) ** 2 + (y - pos.y) ** 2);
-            if (distance <= 40) { // Node radius
+            if (distance <= nodeRadius) {
                 return i;
             }
         }
@@ -407,9 +468,18 @@ class WordCrossroadsGame {
         }
         
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // Apply zoom and pan transformations
+        this.ctx.save();
+        this.ctx.translate(this.panX, this.panY);
+        this.ctx.scale(this.zoomLevel, this.zoomLevel);
+        
         this.drawGrid();
-        this.drawWords();
         this.drawConnections();
+        this.drawWords();
+        this.drawChainLabels();
+        
+        this.ctx.restore();
     }
 
     renderWelcomeScreen() {
@@ -447,21 +517,34 @@ class WordCrossroadsGame {
             const pos = this.wordPositions[index];
             const isRevealed = word.revealed || word.userWord;
             const displayText = word.revealed ? word.word : (word.userWord || '?'.repeat(word.word.length));
+            const isSharedWord = pos.isShared || (word.chainIds && word.chainIds.length > 1);
+            
+            // Node size - larger for shared words
+            const nodeRadius = isSharedWord ? 45 : 35;
             
             // Draw node circle
             this.ctx.beginPath();
-            this.ctx.arc(pos.x, pos.y, 40, 0, 2 * Math.PI);
+            this.ctx.arc(pos.x, pos.y, nodeRadius, 0, 2 * Math.PI);
             
             // Node background color based on state
             if (word.revealed) {
-                this.ctx.fillStyle = 'rgba(16, 185, 129, 0.8)'; // Green for revealed
+                this.ctx.fillStyle = isSharedWord ? 'rgba(16, 185, 129, 0.9)' : 'rgba(16, 185, 129, 0.8)';
             } else if (word.userWord) {
-                this.ctx.fillStyle = 'rgba(99, 102, 241, 0.8)'; // Blue for user input
+                this.ctx.fillStyle = isSharedWord ? 'rgba(99, 102, 241, 0.9)' : 'rgba(99, 102, 241, 0.8)';
             } else {
-                this.ctx.fillStyle = 'rgba(75, 85, 99, 0.8)'; // Gray for unknown
+                this.ctx.fillStyle = isSharedWord ? 'rgba(75, 85, 99, 0.9)' : 'rgba(75, 85, 99, 0.8)';
             }
             
             this.ctx.fill();
+            
+            // Special border for shared words
+            if (isSharedWord) {
+                this.ctx.strokeStyle = '#fbbf24';
+                this.ctx.lineWidth = 3;
+                this.ctx.setLineDash([5, 5]);
+                this.ctx.stroke();
+                this.ctx.setLineDash([]);
+            }
             
             // Node border
             this.ctx.strokeStyle = isRevealed ? '#10b981' : '#374151';
@@ -470,26 +553,81 @@ class WordCrossroadsGame {
             
             // Hover effect
             if (this.hoveredNode === index) {
-                this.ctx.strokeStyle = '#fbbf24';
-                this.ctx.lineWidth = 3;
+                this.ctx.strokeStyle = '#f59e0b';
+                this.ctx.lineWidth = 4;
                 this.ctx.stroke();
             }
             
             // Word text
             this.ctx.fillStyle = '#ffffff';
-            this.ctx.font = 'bold 12px Arial';
+            const fontSize = isSharedWord ? 11 : 10;
+            this.ctx.font = `bold ${fontSize}px Arial`;
             this.ctx.textAlign = 'center';
             this.ctx.textBaseline = 'middle';
-            this.ctx.fillText(displayText, pos.x, pos.y);
             
-            // Word ID for debugging (small number)
-            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-            this.ctx.font = '10px Arial';
-            this.ctx.fillText((index + 1).toString(), pos.x, pos.y - 50);
+            // Split long words into multiple lines
+            if (displayText.length > 8) {
+                const midPoint = Math.floor(displayText.length / 2);
+                const line1 = displayText.substring(0, midPoint);
+                const line2 = displayText.substring(midPoint);
+                this.ctx.fillText(line1, pos.x, pos.y - 6);
+                this.ctx.fillText(line2, pos.x, pos.y + 6);
+            } else {
+                this.ctx.fillText(displayText, pos.x, pos.y);
+            }
+            
+            // Chain indicator for shared words
+            if (isSharedWord && word.chainIds) {
+                this.ctx.fillStyle = 'rgba(251, 191, 36, 0.8)';
+                this.ctx.font = '8px Arial';
+                this.ctx.fillText(`${word.chainIds.length} chains`, pos.x, pos.y + nodeRadius + 15);
+            }
         });
     }
 
     calculateWordPositions() {
+        if (!this.gameState.chains) {
+            // Fallback to circular layout for old format
+            this.calculateCircularLayout();
+            return;
+        }
+
+        const centerX = this.canvas.width / 2;
+        const centerY = this.canvas.height / 2;
+        
+        this.wordPositions = new Array(this.gameState.words.length);
+        
+        // Position each chain in a different area
+        this.gameState.chains.forEach((chain, chainIndex) => {
+            const chainAngle = (2 * Math.PI * chainIndex) / this.gameState.chains.length;
+            const chainRadius = Math.min(this.canvas.width, this.canvas.height) * 0.25;
+            
+            // Calculate chain center
+            const chainCenterX = centerX + chainRadius * Math.cos(chainAngle);
+            const chainCenterY = centerY + chainRadius * Math.sin(chainAngle);
+            
+            // Position words in the chain sequentially
+            chain.wordIds.forEach((wordId, wordIndex) => {
+                const globalWordIndex = this.gameState.words.findIndex(w => w.id === wordId);
+                if (globalWordIndex === -1) return;
+                
+                // Create a line of words for each chain
+                const wordSpacing = 80;
+                const chainLength = (chain.wordIds.length - 1) * wordSpacing;
+                const startX = chainCenterX - chainLength / 2;
+                
+                const x = startX + wordIndex * wordSpacing;
+                const y = chainCenterY + (chainIndex % 2 === 0 ? 0 : 40); // Offset alternate chains
+                
+                this.wordPositions[globalWordIndex] = { x, y, chainId: chain.id };
+            });
+        });
+        
+        // Handle shared words - position them at intersection points
+        this.positionSharedWords();
+    }
+
+    calculateCircularLayout() {
         const centerX = this.canvas.width / 2;
         const centerY = this.canvas.height / 2;
         const radius = Math.min(this.canvas.width, this.canvas.height) * 0.3;
@@ -497,7 +635,6 @@ class WordCrossroadsGame {
         
         this.wordPositions = [];
         
-        // Arrange words in a circle
         for (let i = 0; i < wordCount; i++) {
             const angle = (2 * Math.PI * i) / wordCount;
             const x = centerX + radius * Math.cos(angle);
@@ -506,17 +643,47 @@ class WordCrossroadsGame {
         }
     }
 
+    positionSharedWords() {
+        // Find words that appear in multiple chains
+        this.gameState.words.forEach((word, wordIndex) => {
+            if (word.chainIds && word.chainIds.length > 1) {
+                // This word connects multiple chains - position it at their intersection
+                const chainPositions = word.chainIds.map(chainId => {
+                    const chain = this.gameState.chains.find(c => c.id === chainId);
+                    const chainIndex = this.gameState.chains.indexOf(chain);
+                    const chainAngle = (2 * Math.PI * chainIndex) / this.gameState.chains.length;
+                    const chainRadius = Math.min(this.canvas.width, this.canvas.height) * 0.25;
+                    
+                    return {
+                        x: this.canvas.width / 2 + chainRadius * Math.cos(chainAngle),
+                        y: this.canvas.height / 2 + chainRadius * Math.sin(chainAngle)
+                    };
+                });
+                
+                // Average the positions of connected chains
+                const avgX = chainPositions.reduce((sum, pos) => sum + pos.x, 0) / chainPositions.length;
+                const avgY = chainPositions.reduce((sum, pos) => sum + pos.y, 0) / chainPositions.length;
+                
+                this.wordPositions[wordIndex] = { 
+                    x: avgX, 
+                    y: avgY, 
+                    isShared: true,
+                    chainIds: word.chainIds 
+                };
+            }
+        });
+    }
+
     drawConnections() {
         if (!this.wordPositions) return;
         
         // Define connection type colors and styles
         const connectionStyles = {
-            'Semantic Association': { color: '#3b82f6', dash: [10, 5], width: 3 },
-            'Categorical Membership': { color: '#10b981', dash: [], width: 4 },
-            'Letter Pattern Sharing': { color: '#f59e0b', dash: [5, 5], width: 2 },
-            'Sequential/Temporal': { color: '#8b5cf6', dash: [15, 5], width: 3 },
-            'Phonetic Similarity': { color: '#ef4444', dash: [2, 8], width: 2 },
-            'Etymological': { color: '#ec4899', dash: [20, 10], width: 2 }
+            'Sequential': { color: '#3b82f6', dash: [], width: 4 },
+            'Chain Bridge': { color: '#f59e0b', dash: [10, 10], width: 3 },
+            'Semantic Association': { color: '#10b981', dash: [5, 5], width: 3 },
+            'Categorical Membership': { color: '#8b5cf6', dash: [], width: 2 },
+            'Letter Pattern Sharing': { color: '#ef4444', dash: [2, 8], width: 2 }
         };
         
         this.gameState.connections.forEach(conn => {
@@ -524,6 +691,9 @@ class WordCrossroadsGame {
             const word2Index = this.gameState.words.findIndex(w => w.id === conn.word2);
             
             if (word1Index === -1 || word2Index === -1) return;
+            
+            // Skip self-references (chain bridges are handled differently)
+            if (word1Index === word2Index) return;
             
             const pos1 = this.wordPositions[word1Index];
             const pos2 = this.wordPositions[word2Index];
@@ -537,48 +707,90 @@ class WordCrossroadsGame {
             
             // Calculate line endpoints (edge of circles, not center)
             const angle = Math.atan2(pos2.y - pos1.y, pos2.x - pos1.x);
-            const startX = pos1.x + 40 * Math.cos(angle);
-            const startY = pos1.y + 40 * Math.sin(angle);
-            const endX = pos2.x - 40 * Math.cos(angle);
-            const endY = pos2.y - 40 * Math.sin(angle);
+            const nodeRadius = 35;
+            const startX = pos1.x + nodeRadius * Math.cos(angle);
+            const startY = pos1.y + nodeRadius * Math.sin(angle);
+            const endX = pos2.x - nodeRadius * Math.cos(angle);
+            const endY = pos2.y - nodeRadius * Math.sin(angle);
             
             this.ctx.beginPath();
             this.ctx.moveTo(startX, startY);
             this.ctx.lineTo(endX, endY);
             this.ctx.stroke();
             
-            // Draw arrow head
-            const arrowLength = 10;
-            const arrowAngle = Math.PI / 6;
+            // Draw arrow head for sequential connections
+            if (conn.connectionType === 'Sequential') {
+                const arrowLength = 12;
+                const arrowAngle = Math.PI / 6;
+                
+                this.ctx.beginPath();
+                this.ctx.moveTo(endX, endY);
+                this.ctx.lineTo(
+                    endX - arrowLength * Math.cos(angle - arrowAngle),
+                    endY - arrowLength * Math.sin(angle - arrowAngle)
+                );
+                this.ctx.moveTo(endX, endY);
+                this.ctx.lineTo(
+                    endX - arrowLength * Math.cos(angle + arrowAngle),
+                    endY - arrowLength * Math.sin(angle + arrowAngle)
+                );
+                this.ctx.stroke();
+            }
             
-            this.ctx.beginPath();
-            this.ctx.moveTo(endX, endY);
-            this.ctx.lineTo(
-                endX - arrowLength * Math.cos(angle - arrowAngle),
-                endY - arrowLength * Math.sin(angle - arrowAngle)
-            );
-            this.ctx.moveTo(endX, endY);
-            this.ctx.lineTo(
-                endX - arrowLength * Math.cos(angle + arrowAngle),
-                endY - arrowLength * Math.sin(angle + arrowAngle)
-            );
-            this.ctx.stroke();
-            
-            // Draw connection type label
-            const midX = (startX + endX) / 2;
-            const midY = (startY + endY) / 2;
-            
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-            this.ctx.fillRect(midX - 40, midY - 10, 80, 20);
-            
-            this.ctx.fillStyle = style.color;
-            this.ctx.font = '10px Arial';
-            this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'middle';
-            this.ctx.fillText(conn.connectionType.split(' ')[0], midX, midY);
+            // Draw step number for sequential connections
+            if (conn.connectionType === 'Sequential' && conn.step) {
+                const midX = (startX + endX) / 2;
+                const midY = (startY + endY) / 2;
+                
+                this.ctx.fillStyle = '#ffffff';
+                this.ctx.beginPath();
+                this.ctx.arc(midX, midY, 12, 0, 2 * Math.PI);
+                this.ctx.fill();
+                
+                this.ctx.strokeStyle = style.color;
+                this.ctx.lineWidth = 2;
+                this.ctx.stroke();
+                
+                this.ctx.fillStyle = style.color;
+                this.ctx.font = 'bold 10px Arial';
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                this.ctx.fillText(conn.step.toString(), midX, midY);
+            }
         });
         
         this.ctx.setLineDash([]);
+    }
+
+    drawChainLabels() {
+        if (!this.gameState.chains) return;
+        
+        this.gameState.chains.forEach((chain, chainIndex) => {
+            // Find the center of the chain
+            const chainWordPositions = chain.wordIds.map(wordId => {
+                const wordIndex = this.gameState.words.findIndex(w => w.id === wordId);
+                return this.wordPositions[wordIndex];
+            }).filter(pos => pos);
+            
+            if (chainWordPositions.length === 0) return;
+            
+            const centerX = chainWordPositions.reduce((sum, pos) => sum + pos.x, 0) / chainWordPositions.length;
+            const centerY = chainWordPositions.reduce((sum, pos) => sum + pos.y, 0) / chainWordPositions.length;
+            
+            // Draw chain theme label
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            this.ctx.fillRect(centerX - 80, centerY - 80, 160, 30);
+            
+            this.ctx.fillStyle = '#ffffff';
+            this.ctx.font = 'bold 12px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillText(`Chain ${chainIndex + 1}`, centerX, centerY - 70);
+            
+            this.ctx.fillStyle = '#cccccc';
+            this.ctx.font = '10px Arial';
+            this.ctx.fillText(chain.theme, centerX, centerY - 55);
+        });
     }
 
     selectTopic(topic) {
@@ -627,6 +839,43 @@ class WordCrossroadsGame {
         document.querySelectorAll('.difficulty-card').forEach(card => {
             card.classList.remove('selected');
         });
+    }
+
+    zoomIn() {
+        const centerX = this.canvas.width / 2;
+        const centerY = this.canvas.height / 2;
+        
+        const zoomFactor = 1.2;
+        const newZoom = Math.min(this.maxZoom, this.zoomLevel * zoomFactor);
+        
+        const zoomChange = newZoom / this.zoomLevel;
+        this.panX = centerX - (centerX - this.panX) * zoomChange;
+        this.panY = centerY - (centerY - this.panY) * zoomChange;
+        
+        this.zoomLevel = newZoom;
+        this.render();
+    }
+
+    zoomOut() {
+        const centerX = this.canvas.width / 2;
+        const centerY = this.canvas.height / 2;
+        
+        const zoomFactor = 0.8;
+        const newZoom = Math.max(this.minZoom, this.zoomLevel * zoomFactor);
+        
+        const zoomChange = newZoom / this.zoomLevel;
+        this.panX = centerX - (centerX - this.panX) * zoomChange;
+        this.panY = centerY - (centerY - this.panY) * zoomChange;
+        
+        this.zoomLevel = newZoom;
+        this.render();
+    }
+
+    resetView() {
+        this.zoomLevel = 1;
+        this.panX = 0;
+        this.panY = 0;
+        this.render();
     }
 }
 

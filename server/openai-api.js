@@ -33,53 +33,56 @@ export const CONNECTION_TYPES = {
 const DEMO_PUZZLES = {
     animals: {
         easy: {
-            words: [
-                { word: "CAT", position: { row: 0, col: 0 }, direction: "horizontal" },
-                { word: "DOG", position: { row: 1, col: 1 }, direction: "horizontal" },
-                { word: "BAT", position: { row: 2, col: 0 }, direction: "horizontal" },
-                { word: "COW", position: { row: 0, col: 2 }, direction: "vertical" },
-                { word: "OWL", position: { row: 1, col: 3 }, direction: "vertical" }
+            chains: [
+                {
+                    id: "chain1",
+                    words: ["MOUSE", "CAT", "DOG", "WOLF", "BEAR", "TIGER"],
+                    theme: "Size progression - small to large predators"
+                },
+                {
+                    id: "chain2", 
+                    words: ["CAT", "LION", "LEOPARD", "CHEETAH", "JAGUAR", "PANTHER"],
+                    theme: "Feline family progression"
+                }
             ],
-            connections: [
-                { word1Index: 0, word2Index: 1, connectionType: "Categorical Membership", sharedLetterIndex1: 2, sharedLetterIndex2: 0, explanation: "Both are common pets" },
-                { word1Index: 0, word2Index: 2, connectionType: "Phonetic Similarity", sharedLetterIndex1: 1, sharedLetterIndex2: 1, explanation: "Both have 'AT' sound" },
-                { word1Index: 0, word2Index: 3, connectionType: "Categorical Membership", sharedLetterIndex1: 2, sharedLetterIndex2: 0, explanation: "Both are animals" },
-                { word1Index: 1, word2Index: 4, connectionType: "Letter Pattern Sharing", sharedLetterIndex1: 2, sharedLetterIndex2: 0, explanation: "Both end with similar sounds" }
-            ]
+            sharedWords: ["CAT"] // CAT appears in both chains
         },
         medium: {
-            words: [
-                { word: "TIGER", position: { row: 0, col: 0 }, direction: "horizontal" },
-                { word: "EAGLE", position: { row: 1, col: 1 }, direction: "horizontal" },
-                { word: "SHARK", position: { row: 2, col: 0 }, direction: "horizontal" },
-                { word: "WHALE", position: { row: 0, col: 4 }, direction: "vertical" },
-                { word: "GECKO", position: { row: 1, col: 2 }, direction: "vertical" },
-                { word: "HORSE", position: { row: 3, col: 1 }, direction: "horizontal" },
-                { word: "SNAKE", position: { row: 2, col: 3 }, direction: "vertical" }
+            chains: [
+                {
+                    id: "chain1",
+                    words: ["ANT", "BEE", "WASP", "HORNET", "BEETLE", "SPIDER"],
+                    theme: "Insect size and danger progression"
+                },
+                {
+                    id: "chain2",
+                    words: ["SPIDER", "SNAKE", "LIZARD", "TURTLE", "CROCODILE", "DRAGON"],
+                    theme: "Reptilian evolution and mythology"
+                },
+                {
+                    id: "chain3",
+                    words: ["BEE", "BIRD", "BAT", "EAGLE", "HAWK", "FALCON"],
+                    theme: "Flying creatures by hunting ability"
+                }
             ],
-            connections: [
-                { word1Index: 0, word2Index: 1, connectionType: "Categorical Membership", sharedLetterIndex1: 4, sharedLetterIndex2: 0, explanation: "Both are predators" },
-                { word1Index: 0, word2Index: 2, connectionType: "Semantic Association", sharedLetterIndex1: 2, sharedLetterIndex2: 1, explanation: "Both are fierce hunters" },
-                { word1Index: 1, word2Index: 4, connectionType: "Letter Pattern Sharing", sharedLetterIndex1: 2, sharedLetterIndex2: 0, explanation: "Both contain 'G'" },
-                { word1Index: 2, word2Index: 6, connectionType: "Categorical Membership", sharedLetterIndex1: 0, sharedLetterIndex2: 0, explanation: "Both are reptiles/have scales" },
-                { word1Index: 3, word2Index: 5, connectionType: "Sequential/Temporal", sharedLetterIndex1: 1, sharedLetterIndex2: 0, explanation: "Size progression in mammals" }
-            ]
+            sharedWords: ["SPIDER", "BEE"] // These words connect different chains
         }
     },
     technology: {
         easy: {
-            words: [
-                { word: "PHONE", position: { row: 0, col: 0 }, direction: "horizontal" },
-                { word: "EMAIL", position: { row: 1, col: 1 }, direction: "horizontal" },
-                { word: "MOUSE", position: { row: 2, col: 0 }, direction: "horizontal" },
-                { word: "SCREEN", position: { row: 0, col: 2 }, direction: "vertical" },
-                { word: "LAPTOP", position: { row: 1, col: 3 }, direction: "vertical" }
+            chains: [
+                {
+                    id: "chain1",
+                    words: ["PHONE", "SMARTPHONE", "TABLET", "LAPTOP", "DESKTOP", "SERVER"],
+                    theme: "Computing device evolution"
+                },
+                {
+                    id: "chain2",
+                    words: ["LAPTOP", "KEYBOARD", "MOUSE", "MONITOR", "PRINTER", "SCANNER"],
+                    theme: "Computer peripherals"
+                }
             ],
-            connections: [
-                { word1Index: 0, word2Index: 1, connectionType: "Semantic Association", sharedLetterIndex1: 3, sharedLetterIndex2: 0, explanation: "Both are communication tools" },
-                { word1Index: 0, word2Index: 3, connectionType: "Categorical Membership", sharedLetterIndex1: 2, sharedLetterIndex2: 2, explanation: "Both are electronic devices" },
-                { word1Index: 2, word2Index: 4, connectionType: "Semantic Association", sharedLetterIndex1: 2, sharedLetterIndex2: 2, explanation: "Both are computer peripherals" }
-            ]
+            sharedWords: ["LAPTOP"]
         }
     }
 };
@@ -95,7 +98,89 @@ function getDemoPuzzle(difficulty = 'medium', topic = null) {
     const selectedDifficulty = availableDifficulties.includes(difficulty) ? difficulty : 'easy';
     
     console.log(`🎮 Using demo puzzle: ${selectedTopic} - ${selectedDifficulty}`);
-    return DEMO_PUZZLES[selectedTopic][selectedDifficulty];
+    
+    const puzzleData = DEMO_PUZZLES[selectedTopic][selectedDifficulty];
+    
+    // Convert chain format to game format
+    return convertChainsToGameFormat(puzzleData);
+}
+
+function convertChainsToGameFormat(puzzleData) {
+    const { chains, sharedWords } = puzzleData;
+    const allWords = new Set();
+    const connections = [];
+    
+    // Collect all unique words
+    chains.forEach(chain => {
+        chain.words.forEach(word => allWords.add(word));
+    });
+    
+    const wordsArray = Array.from(allWords);
+    
+    // Create word objects with IDs
+    const words = wordsArray.map((word, index) => ({
+        id: `word-${index}`,
+        word: word,
+        revealed: Math.random() < 0.4, // Randomly reveal ~40% of words
+        userWord: null,
+        chainIds: [] // Track which chains this word belongs to
+    }));
+    
+    // Create sequential connections within each chain
+    chains.forEach((chain, chainIndex) => {
+        for (let i = 0; i < chain.words.length - 1; i++) {
+            const word1Index = wordsArray.indexOf(chain.words[i]);
+            const word2Index = wordsArray.indexOf(chain.words[i + 1]);
+            
+            // Track chain membership
+            words[word1Index].chainIds.push(chain.id);
+            words[word2Index].chainIds.push(chain.id);
+            
+            connections.push({
+                word1: `word-${word1Index}`,
+                word2: `word-${word2Index}`,
+                connectionType: "Sequential",
+                chainId: chain.id,
+                chainTheme: chain.theme,
+                step: i + 1,
+                explanation: `Step ${i + 1} in: ${chain.theme}`
+            });
+        }
+    });
+    
+    // Add cross-chain connections for shared words
+    sharedWords.forEach(sharedWord => {
+        const wordIndex = wordsArray.indexOf(sharedWord);
+        if (wordIndex !== -1) {
+            const chainsContainingWord = chains.filter(chain => 
+                chain.words.includes(sharedWord)
+            );
+            
+            if (chainsContainingWord.length > 1) {
+                // This word connects multiple chains
+                for (let i = 0; i < chainsContainingWord.length - 1; i++) {
+                    connections.push({
+                        word1: `word-${wordIndex}`,
+                        word2: `word-${wordIndex}`, // Self-reference to indicate chain bridge
+                        connectionType: "Chain Bridge",
+                        chainId: "bridge",
+                        explanation: `Connects "${chainsContainingWord[i].theme}" with "${chainsContainingWord[i + 1].theme}"`
+                    });
+                }
+            }
+        }
+    });
+    
+    return {
+        words,
+        connections,
+        chains: chains.map(chain => ({
+            ...chain,
+            wordIds: chain.words.map(word => `word-${wordsArray.indexOf(word)}`)
+        })),
+        gridSize: { rows: 10, cols: 10 }, // Not used in graph view but kept for compatibility
+        grid: [] // Not used in graph view
+    };
 }
 
 export async function generateWordGraph(difficulty = 'medium', topic = null) {

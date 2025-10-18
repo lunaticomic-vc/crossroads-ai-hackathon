@@ -3,16 +3,20 @@ import { generateWordGraph } from './openai-api.js';
 export class GameLogic {
     static async createNewGame(difficulty = 'medium', topic = null) {
         try {
-            // Generate puzzle from Claude with difficulty and topic
+            // Generate puzzle from OpenAI with difficulty and topic
             const puzzleData = await generateWordGraph(difficulty, topic);
             
-            // Process the puzzle data into game state
-            const gameState = this.processPuzzleData(puzzleData);
-            
-            // Reveal words based on difficulty
-            this.revealInitialWords(gameState, difficulty);
-            
-            return gameState;
+            // Check if data is already in the new chain format
+            if (puzzleData.chains) {
+                // New chain format - use directly
+                this.revealInitialWords(puzzleData, difficulty);
+                return puzzleData;
+            } else {
+                // Old format - process the puzzle data into game state
+                const gameState = this.processPuzzleData(puzzleData);
+                this.revealInitialWords(gameState, difficulty);
+                return gameState;
+            }
         } catch (error) {
             console.error('Error creating new game:', error);
             throw error;

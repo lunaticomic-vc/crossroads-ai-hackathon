@@ -392,4 +392,348 @@ h1 {
     .modal-content {
         padding: 30px 20px;
     }
+
+    .difficulty-cards {
+        grid-template-columns: 1fr;
+    }
+
+    .topic-cards {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+    }
+
+    .topic-selection h2 {
+        font-size: 2rem;
+    }
+
+    .difficulty-selection h2 {
+        font-size: 2rem;
+    }
+
+    #topic-input {
+        padding: 15px;
+        font-size: 1rem;
+    }
+
+    .topic-header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+
+    .game-header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+}
+
+/* Welcome Screen Styles */
+.topic-screen, .difficulty-screen {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 80vh;
+    animation: fadeIn 1s ease;
+}
+
+/* Topic Selection Styles */
+.topic-selection {
+    text-align: center;
+    margin-top: 30px;
+}
+
+.topic-selection h2 {
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.topic-description {
+    font-size: 1.2rem;
+    margin-bottom: 40px;
+    opacity: 0.9;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.topic-input-section {
+    margin-bottom: 40px;
+}
+
+#topic-input {
+    width: 100%;
+    max-width: 500px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border: 2px solid var(--primary-color);
+    border-radius: 15px;
+    font-size: 1.2rem;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-light);
+    text-align: center;
+    backdrop-filter: blur(10px);
+}
+
+#topic-input:focus {
+    outline: none;
+    border-color: var(--secondary-color);
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+}
+
+#topic-input::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.topic-divider {
+    margin: 40px 0;
+    position: relative;
+}
+
+.topic-divider:before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.topic-divider span {
+    background: var(--bg-dark);
+    padding: 0 20px;
+    color: var(--text-light);
+    opacity: 0.7;
+    font-weight: bold;
+    position: relative;
+    z-index: 1;
+}
+
+.preset-topics h3 {
+    font-size: 1.8rem;
+    margin-bottom: 30px;
+    color: var(--primary-color);
+}
+
+.topic-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.topic-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: var(--shadow);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.topic-card:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: left 0.5s;
+}
+
+.topic-card:hover:before {
+    left: 100%;
+}
+
+.topic-card:hover {
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+    border-color: var(--primary-color);
+}
+
+.topic-card.selected {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
+    transform: scale(1.05);
+}
+
+.topic-icon {
+    font-size: 2.5rem;
+    margin-bottom: 15px;
+    display: block;
+}
+
+.topic-card h4 {
+    font-size: 1.3rem;
+    margin-bottom: 10px;
+    color: var(--primary-color);
+}
+
+.topic-card p {
+    font-size: 0.95rem;
+    opacity: 0.8;
+    line-height: 1.4;
+}
+
+/* Topic Header Styles */
+.topic-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.topic-highlight {
+    color: var(--primary-color);
+    font-weight: bold;
+    text-transform: capitalize;
+}
+
+#change-topic-btn {
+    font-size: 0.9rem;
+    padding: 8px 16px;
+}
+
+.difficulty-selection {
+    text-align: center;
+    margin-top: 50px;
+}
+
+.difficulty-selection h2 {
+    font-size: 2.5rem;
+    margin-bottom: 40px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.difficulty-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 30px;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.difficulty-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: var(--shadow);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.difficulty-card:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: left 0.5s;
+}
+
+.difficulty-card:hover:before {
+    left: 100%;
+}
+
+.difficulty-card:hover {
+    transform: translateY(-10px) scale(1.02);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    border-color: var(--primary-color);
+}
+
+.difficulty-card.selected {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 30px rgba(99, 102, 241, 0.5);
+    transform: scale(1.05);
+}
+
+.difficulty-icon {
+    font-size: 3rem;
+    margin-bottom: 20px;
+    display: block;
+}
+
+.difficulty-card h3 {
+    font-size: 1.8rem;
+    margin-bottom: 15px;
+    color: var(--primary-color);
+}
+
+.difficulty-card p {
+    font-size: 1.1rem;
+    margin-bottom: 20px;
+    opacity: 0.9;
+}
+
+.difficulty-card ul {
+    list-style: none;
+    text-align: left;
+}
+
+.difficulty-card li {
+    padding: 8px 0;
+    position: relative;
+    padding-left: 20px;
+}
+
+.difficulty-card li:before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    color: var(--success-color);
+    font-weight: bold;
+}
+
+/* Game Screen Styles */
+.game-screen {
+    animation: fadeIn 0.5s ease;
+}
+
+.game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.difficulty-indicator {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.difficulty-indicator span {
+    background: var(--primary-color);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: bold;
+    text-transform: capitalize;
+}
+
+#back-to-menu {
+    font-size: 0.9rem;
+    padding: 8px 16px;
 }

@@ -6,6 +6,8 @@ class WordCrossroadsGame {
         this.gameState = null;
         this.selectedCell = null;
         this.hoveredCell = null;
+        this.selectedDifficulty = null;
+        this.selectedTopic = null;
         
         // Canvas settings
         this.cellSize = 50;
@@ -16,15 +18,38 @@ class WordCrossroadsGame {
 
     init() {
         this.setupEventListeners();
+        this.setupTopicSelection();
+        this.setupDifficultySelection();
         this.resizeCanvas();
         window.addEventListener('resize', () => this.resizeCanvas());
     }
 
     setupEventListeners() {
         // Button listeners
-        document.getElementById('new-game-btn').addEventListener('click', () => this.startNewGame());
-        document.getElementById('validate-btn').addEventListener('click', () => this.validatePuzzle());
-        document.getElementById('hint-btn').addEventListener('click', () => this.showHint());
+        document.getElementById('new-game-btn').addEventListener('click', () => {
+            console.log('New game button clicked');
+            this.startNewGame();
+        });
+        document.getElementById('validate-btn').addEventListener('click', () => {
+            console.log('Validate button clicked');
+            this.validatePuzzle();
+        });
+        document.getElementById('hint-btn').addEventListener('click', () => {
+            console.log('Hint button clicked');
+            this.showHint();
+        });
+        document.getElementById('back-to-menu').addEventListener('click', () => {
+            console.log('Back to menu button clicked');
+            this.showTopicScreen();
+        });
+        document.getElementById('change-topic-btn').addEventListener('click', () => {
+            console.log('Change topic button clicked');
+            this.showTopicScreen();
+        });
+        document.getElementById('custom-topic-btn').addEventListener('click', () => {
+            console.log('Custom topic button clicked');
+            this.handleCustomTopic();
+        });
         
         // Canvas listeners
         this.canvas.addEventListener('click', (e) => this.handleCanvasClick(e));
@@ -35,9 +60,53 @@ class WordCrossroadsGame {
         document.getElementById('cancel-btn').addEventListener('click', () => this.closeModal());
         document.getElementById('close-result-btn').addEventListener('click', () => this.closeResultModal());
         
+        // Input listeners
+        document.getElementById('word-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') this.submitWord();
+        });
+        
+        document.getElementById('topic-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') this.handleCustomTopic();
+        });
+        
         // Input listener
         document.getElementById('word-input').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') this.submitWord();
+        });
+    }
+
+    setupDifficultySelection() {
+        // Add click listeners to difficulty cards
+        const difficultyCards = document.querySelectorAll('.difficulty-card');
+        difficultyCards.forEach(card => {
+            card.addEventListener('click', () => {
+                // Remove previous selection
+                difficultyCards.forEach(c => c.classList.remove('selected'));
+                // Add selection to clicked card
+                card.classList.add('selected');
+                
+                // Store selected difficulty
+                this.selectedDifficulty = card.dataset.difficulty;
+                
+                // Start game after a short delay to show selection
+                setTimeout(() => {
+                    this.showGameScreen();
+                    this.startNewGame();
+                }, 800);
+            });
+        });
+    }
+
+    setupTopicSelection() {
+        // Add click listeners to preset topic cards
+        const topicCards = document.querySelectorAll('.topic-card');
+        console.log('Found topic cards:', topicCards.length);
+        topicCards.forEach(card => {
+            card.addEventListener('click', () => {
+                const topic = card.dataset.topic;
+                console.log('Topic card clicked:', topic);
+                this.selectTopic(topic);
+            });
         });
     }
 
@@ -63,9 +132,18 @@ class WordCrossroadsGame {
     async startNewGame() {
         this.showLoading(true);
         try {
+            const requestBody = {};
+            if (this.selectedDifficulty) {
+                requestBody.difficulty = this.selectedDifficulty;
+            }
+            if (this.selectedTopic) {
+                requestBody.topic = this.selectedTopic;
+            }
+            
             const response = await fetch('/api/new-game', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestBody)
             });
             
             if (!response.ok) throw new Error('Failed to start new game');
@@ -77,7 +155,7 @@ class WordCrossroadsGame {
             document.getElementById('game-status').textContent = 'In Progress';
         } catch (error) {
             console.error('Error starting new game:', error);
-            alert('Failed to start new game. Please check your API key in .env file.');
+            alert('Failed to start new game. Please check your OpenAI API key in .env file.');
         } finally {
             this.showLoading(false);
         }
@@ -310,6 +388,23 @@ class WordCrossroadsGame {
         }
     }
 
+    showWelcomeScreen() {
+        // This method is now replaced by showTopicScreen()
+        this.showTopicScreen();
+    }
+
+    showGameScreen() {
+        document.getElementById('topic-screen').style.display = 'none';
+        document.getElementById('difficulty-screen').style.display = 'none';
+        document.getElementById('game-screen').style.display = 'block';
+        
+        // Update difficulty indicator
+        if (this.selectedDifficulty) {
+            document.getElementById('current-difficulty').textContent = 
+                this.selectedDifficulty.charAt(0).toUpperCase() + this.selectedDifficulty.slice(1);
+        }
+    }
+
     showLoading(show) {
         const loading = document.getElementById('loading');
         if (show) {
@@ -445,6 +540,54 @@ class WordCrossroadsGame {
             x: this.padding + centerCol * this.cellSize,
             y: this.padding + centerRow * this.cellSize
         };
+    }
+
+    selectTopic(topic) {
+        this.selectedTopic = topic;
+        console.log('Selected topic:', topic);
+        
+        // Update the selected topic display
+        document.getElementById('selected-topic').textContent = topic;
+        
+        // Show difficulty selection screen
+        this.showDifficultyScreen();
+    }
+
+    handleCustomTopic() {
+        const topicInput = document.getElementById('topic-input');
+        const customTopic = topicInput.value.trim();
+        
+        if (!customTopic) {
+            alert('Please enter a topic');
+            return;
+        }
+        
+        console.log('Custom topic entered:', customTopic);
+        this.selectTopic(customTopic);
+    }
+
+    showTopicScreen() {
+        document.getElementById('topic-screen').style.display = 'block';
+        document.getElementById('difficulty-screen').style.display = 'none';
+        document.getElementById('game-screen').style.display = 'none';
+        
+        // Reset selections
+        this.selectedTopic = null;
+        this.selectedDifficulty = null;
+        
+        // Clear topic input
+        document.getElementById('topic-input').value = '';
+    }
+
+    showDifficultyScreen() {
+        document.getElementById('topic-screen').style.display = 'none';
+        document.getElementById('difficulty-screen').style.display = 'block';
+        document.getElementById('game-screen').style.display = 'none';
+        
+        // Clear any previous difficulty selection
+        document.querySelectorAll('.difficulty-card').forEach(card => {
+            card.classList.remove('selected');
+        });
     }
 }
 

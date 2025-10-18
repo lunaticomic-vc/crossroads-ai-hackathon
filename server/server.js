@@ -3,7 +3,7 @@ import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { GameLogic } from './game-logic.js';
-import { validateUserSolution } from './claude-api.js';
+import { validateUserSolution } from './openai-api.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,8 +25,9 @@ const activeGames = new Map();
 // Create a new game
 app.post('/api/new-game', async (req, res) => {
     try {
-        console.log('Creating new game...');
-        const gameState = await GameLogic.createNewGame();
+        const { difficulty, topic } = req.body;
+        console.log(`Creating new game with difficulty: ${difficulty}, topic: ${topic}`);
+        const gameState = await GameLogic.createNewGame(difficulty, topic);
         
         // Generate game ID
         const gameId = Date.now().toString();
@@ -127,7 +128,8 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
     console.log(`🎮 Word Crossroads Game Server`);
     console.log(`🚀 Server running on http://localhost:${PORT}`);
-    console.log(`📝 Make sure to set your ANTHROPIC_API_KEY in the .env file`);
+    console.log(`🤖 Using OpenAI GPT-4 for puzzle generation`);
+    console.log(`📝 Add OPENAI_API_KEY to .env file for full GPT-4 features`);
     console.log(`\nPress Ctrl+C to stop the server`);
 });
 

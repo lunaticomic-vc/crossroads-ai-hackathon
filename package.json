@@ -1,20 +1,25 @@
 {
   "name": "word-crossroads-game",
   "version": "1.0.0",
-  "description": "A word connection game with AI-generated puzzles",
+  "description": "A word connection game with AI-generated puzzles using OpenAI GPT-4",
   "main": "server/server.js",
   "type": "module",
   "scripts": {
     "start": "node server/server.js",
     "dev": "node --watch server/server.js"
   },
-  "keywords": ["game", "words", "puzzle", "ai"],
+  "keywords": [
+    "game",
+    "words",
+    "puzzle",
+    "ai"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "express": "^4.18.2",
-    "dotenv": "^16.3.1",
     "cors": "^2.8.5",
-    "@anthropic-ai/sdk": "^0.20.0"
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "openai": "^6.5.0"
   }
 }

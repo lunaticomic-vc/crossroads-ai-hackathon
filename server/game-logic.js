@@ -1,16 +1,16 @@
-import { generateWordGraph } from './claude-api.js';
+import { generateWordGraph } from './openai-api.js';
 
 export class GameLogic {
-    static async createNewGame() {
+    static async createNewGame(difficulty = 'medium', topic = null) {
         try {
-            // Generate puzzle from Claude
-            const puzzleData = await generateWordGraph();
+            // Generate puzzle from Claude with difficulty and topic
+            const puzzleData = await generateWordGraph(difficulty, topic);
             
             // Process the puzzle data into game state
             const gameState = this.processPuzzleData(puzzleData);
             
-            // Reveal 1/3 of the words
-            this.revealInitialWords(gameState);
+            // Reveal words based on difficulty
+            this.revealInitialWords(gameState, difficulty);
             
             return gameState;
         } catch (error) {
@@ -111,9 +111,26 @@ export class GameLogic {
         return grid;
     }
 
-    static revealInitialWords(gameState) {
+    static revealInitialWords(gameState, difficulty = 'medium') {
         const totalWords = gameState.words.length;
-        const wordsToReveal = Math.ceil(totalWords / 3);
+        
+        // Determine how many words to reveal based on difficulty
+        let revealRatio;
+        switch (difficulty) {
+            case 'easy':
+                revealRatio = 0.5; // Reveal 50% of words
+                break;
+            case 'medium':
+                revealRatio = 0.33; // Reveal 33% of words
+                break;
+            case 'hard':
+                revealRatio = 0.25; // Reveal 25% of words
+                break;
+            default:
+                revealRatio = 0.33;
+        }
+        
+        const wordsToReveal = Math.max(1, Math.ceil(totalWords * revealRatio));
         
         // Shuffle and pick words to reveal
         const shuffled = [...gameState.words].sort(() => Math.random() - 0.5);

@@ -8,65 +8,186 @@
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>Word Crossroads</h1>
-            <p class="subtitle">Connect words through shared letters and logical relationships</p>
-        </header>
-
-        <div class="game-info">
-            <div class="info-card">
-                <h3>Connection Types</h3>
-                <ul id="connection-types">
-                    <li><span class="badge semantic">Semantic</span> - Related meanings</li>
-                    <li><span class="badge pattern">Pattern</span> - Letter sequences</li>
-                    <li><span class="badge category">Category</span> - Same group</li>
-                    <li><span class="badge sequential">Sequential</span> - Time/Process</li>
-                    <li><span class="badge phonetic">Phonetic</span> - Similar sounds</li>
-                    <li><span class="badge etymological">Etymology</span> - Word roots</li>
-                </ul>
-            </div>
-            <div class="info-card">
-                <h3>Game Status</h3>
-                <p><strong>Words Filled:</strong> <span id="words-filled">0</span> / <span id="total-words">0</span></p>
-                <p><strong>Status:</strong> <span id="game-status">Ready</span></p>
-            </div>
-        </div>
-
-        <div class="controls">
-            <button id="new-game-btn" class="btn btn-primary">New Game</button>
-            <button id="validate-btn" class="btn btn-success" disabled>Validate Puzzle</button>
-            <button id="hint-btn" class="btn btn-info">Show Hint</button>
-        </div>
-
-        <div id="game-container">
-            <canvas id="game-canvas"></canvas>
-        </div>
-
-        <div id="input-modal" class="modal">
-            <div class="modal-content">
-                <h3>Fill in the word</h3>
-                <p>Position: <span id="modal-position"></span></p>
-                <p>Length: <span id="modal-length"></span> letters</p>
-                <p>Connecting letter: <span id="modal-connection"></span></p>
-                <input type="text" id="word-input" placeholder="Enter word" maxlength="20">
-                <div class="modal-buttons">
-                    <button id="submit-word-btn" class="btn btn-primary">Submit</button>
-                    <button id="cancel-btn" class="btn btn-secondary">Cancel</button>
+        <!-- Topic Selection Screen -->
+        <div id="topic-screen" class="topic-screen">
+            <header>
+                <h1>Word Crossroads</h1>
+                <p class="subtitle">Connect words through shared letters and logical relationships</p>
+            </header>
+            
+            <div class="topic-selection">
+                <h2>Choose Your Topic</h2>
+                <p class="topic-description">Select a theme for your word puzzle. All words will be related to this topic.</p>
+                
+                <div class="topic-input-section">
+                    <input type="text" id="topic-input" placeholder="Enter a topic (e.g., Animals, Technology, Food, Sports...)" maxlength="50">
+                    <button id="custom-topic-btn" class="btn btn-primary">Create Custom Puzzle</button>
+                </div>
+                
+                <div class="topic-divider">
+                    <span>OR</span>
+                </div>
+                
+                <div class="preset-topics">
+                    <h3>Popular Topics</h3>
+                    <div class="topic-cards">
+                        <div class="topic-card" data-topic="Animals">
+                            <div class="topic-icon">🦁</div>
+                            <h4>Animals</h4>
+                            <p>Wildlife, pets, and creatures</p>
+                        </div>
+                        
+                        <div class="topic-card" data-topic="Technology">
+                            <div class="topic-icon">💻</div>
+                            <h4>Technology</h4>
+                            <p>Computers, gadgets, and digital</p>
+                        </div>
+                        
+                        <div class="topic-card" data-topic="Food">
+                            <div class="topic-icon">🍕</div>
+                            <h4>Food</h4>
+                            <p>Cuisine, ingredients, and cooking</p>
+                        </div>
+                        
+                        <div class="topic-card" data-topic="Sports">
+                            <div class="topic-icon">⚽</div>
+                            <h4>Sports</h4>
+                            <p>Games, athletics, and competition</p>
+                        </div>
+                        
+                        <div class="topic-card" data-topic="Nature">
+                            <div class="topic-icon">🌲</div>
+                            <h4>Nature</h4>
+                            <p>Plants, weather, and environment</p>
+                        </div>
+                        
+                        <div class="topic-card" data-topic="Science">
+                            <div class="topic-icon">🔬</div>
+                            <h4>Science</h4>
+                            <p>Physics, chemistry, and biology</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div id="result-modal" class="modal">
-            <div class="modal-content">
-                <h3 id="result-title">Validation Result</h3>
-                <div id="result-content"></div>
-                <button id="close-result-btn" class="btn btn-primary">Close</button>
+        <!-- Difficulty Selection Screen -->
+        <div id="difficulty-screen" class="difficulty-screen" style="display: none;">
+            <header>
+                <h1>Word Crossroads</h1>
+                <div class="topic-header">
+                    <p class="subtitle">Topic: <span id="selected-topic" class="topic-highlight">Animals</span></p>
+                    <button id="change-topic-btn" class="btn btn-secondary">Change Topic</button>
+                </div>
+            </header>
+            
+            <div class="difficulty-selection">
+                <h2>Choose Your Difficulty</h2>
+                <div class="difficulty-cards">
+                    <div class="difficulty-card" data-difficulty="easy">
+                        <div class="difficulty-icon">🌱</div>
+                        <h3>Easy</h3>
+                        <p>5-7 words, simple connections</p>
+                        <ul>
+                            <li>Basic semantic relationships</li>
+                            <li>Common vocabulary</li>
+                            <li>Clear patterns</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="difficulty-card" data-difficulty="medium">
+                        <div class="difficulty-icon">🔥</div>
+                        <h3>Medium</h3>
+                        <p>8-10 words, mixed connections</p>
+                        <ul>
+                            <li>Multiple connection types</li>
+                            <li>Moderate vocabulary</li>
+                            <li>Some abstract relationships</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="difficulty-card" data-difficulty="hard">
+                        <div class="difficulty-icon">💎</div>
+                        <h3>Hard</h3>
+                        <p>11-15 words, complex connections</p>
+                        <ul>
+                            <li>Advanced relationships</li>
+                            <li>Challenging vocabulary</li>
+                            <li>Multiple overlapping patterns</li>
+                        </ul>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div id="loading" class="loading">
-            <div class="spinner"></div>
-            <p>Generating puzzle...</p>
+        <!-- Game Screen -->
+        <div id="game-screen" class="game-screen" style="display: none;">
+            <header>
+                <h1>Word Crossroads</h1>
+                <div class="game-header">
+                    <p class="subtitle">Connect words through shared letters and logical relationships</p>
+                    <div class="difficulty-indicator">
+                        <span id="current-difficulty">Medium</span>
+                        <button id="back-to-menu" class="btn btn-secondary">Back to Menu</button>
+                    </div>
+                </div>
+            </header>
+
+            <div class="game-info">
+                <div class="info-card">
+                    <h3>Connection Types</h3>
+                    <ul id="connection-types">
+                        <li><span class="badge semantic">Semantic</span> - Related meanings</li>
+                        <li><span class="badge pattern">Pattern</span> - Letter sequences</li>
+                        <li><span class="badge category">Category</span> - Same group</li>
+                        <li><span class="badge sequential">Sequential</span> - Time/Process</li>
+                        <li><span class="badge phonetic">Phonetic</span> - Similar sounds</li>
+                        <li><span class="badge etymological">Etymology</span> - Word roots</li>
+                    </ul>
+                </div>
+                <div class="info-card">
+                    <h3>Game Status</h3>
+                    <p><strong>Words Filled:</strong> <span id="words-filled">0</span> / <span id="total-words">0</span></p>
+                    <p><strong>Status:</strong> <span id="game-status">Ready</span></p>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button id="new-game-btn" class="btn btn-primary">New Game</button>
+                <button id="validate-btn" class="btn btn-success" disabled>Validate Puzzle</button>
+                <button id="hint-btn" class="btn btn-info">Show Hint</button>
+            </div>
+
+            <div id="game-container">
+                <canvas id="game-canvas"></canvas>
+            </div>
+
+            <div id="input-modal" class="modal">
+                <div class="modal-content">
+                    <h3>Fill in the word</h3>
+                    <p>Position: <span id="modal-position"></span></p>
+                    <p>Length: <span id="modal-length"></span> letters</p>
+                    <p>Connecting letter: <span id="modal-connection"></span></p>
+                    <input type="text" id="word-input" placeholder="Enter word" maxlength="20">
+                    <div class="modal-buttons">
+                        <button id="submit-word-btn" class="btn btn-primary">Submit</button>
+                        <button id="cancel-btn" class="btn btn-secondary">Cancel</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="result-modal" class="modal">
+                <div class="modal-content">
+                    <h3 id="result-title">Validation Result</h3>
+                    <div id="result-content"></div>
+                    <button id="close-result-btn" class="btn btn-primary">Close</button>
+                </div>
+            </div>
+
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <p>Generating puzzle...</p>
+            </div>
         </div>
     </div>
 

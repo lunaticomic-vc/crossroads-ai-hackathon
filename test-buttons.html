@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Button Test</title>
+</head>
+<body>
+    <h1>Button Test Page</h1>
+    
+    <!-- Test buttons from the main game -->
+    <button id="custom-topic-btn">Test Custom Topic Button</button>
+    <div class="topic-card" data-topic="Animals">Test Topic Card - Animals</div>
+    <div class="topic-card" data-topic="Technology">Test Topic Card - Technology</div>
+    
+    <input type="text" id="topic-input" placeholder="Enter topic" value="test topic">
+    <div id="selected-topic">Selected Topic Will Appear Here</div>
+    
+    <!-- Mock screens for testing -->
+    <div id="topic-screen" style="display: block;">Topic Screen</div>
+    <div id="difficulty-screen" style="display: none;">Difficulty Screen</div>
+    <div id="game-screen" style="display: none;">Game Screen</div>
+    
+    <script>
+        // Simple test to see if buttons work
+        console.log('Test page loaded');
+        
+        // Mock the missing elements that the game.js expects
+        if (!document.getElementById('game-canvas')) {
+            const canvas = document.createElement('canvas');
+            canvas.id = 'game-canvas';
+            document.body.appendChild(canvas);
+        }
+        
+        // Add missing buttons that game.js expects
+        const buttons = ['new-game-btn', 'validate-btn', 'hint-btn', 'back-to-menu', 'change-topic-btn', 'submit-word-btn', 'cancel-btn', 'close-result-btn'];
+        buttons.forEach(id => {
+            if (!document.getElementById(id)) {
+                const btn = document.createElement('button');
+                btn.id = id;
+                btn.textContent = id;
+                btn.style.display = 'none';
+                document.body.appendChild(btn);
+            }
+        });
+        
+        // Add missing inputs
+        if (!document.getElementById('word-input')) {
+            const input = document.createElement('input');
+            input.id = 'word-input';
+            input.style.display = 'none';
+            document.body.appendChild(input);
+        }
+        
+        console.log('About to load game.js...');
+    </script>
+    
+    <script type="module" src="js/game.js"></script>
+    
+    <script>
+        setTimeout(() => {
+            console.log('Testing button clicks...');
+            
+            // Test custom topic button
+            const customBtn = document.getElementById('custom-topic-btn');
+            if (customBtn) {
+                console.log('Custom topic button exists, testing click...');
+                customBtn.click();
+            }
+            
+            // Test topic card
+            const topicCard = document.querySelector('.topic-card[data-topic="Animals"]');
+            if (topicCard) {
+                console.log('Topic card exists, testing click...');
+                topicCard.click();
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

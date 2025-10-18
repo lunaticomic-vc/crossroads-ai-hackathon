@@ -4,7 +4,9 @@ An interactive word puzzle game where AI generates connected word graphs and pla
 
 ## 🎮 Game Features
 
-- **AI-Generated Puzzles**: Claude Sonnet 4.5 creates unique word puzzles with logical connections
+- **AI-Generated Puzzles**: OpenAI GPT-4 creates unique word puzzles with logical connections
+- **Topic Selection**: Choose from preset topics or enter custom themes for personalized puzzles
+- **Difficulty Levels**: Easy, Medium, and Hard with varying complexity and word counts
 - **6 Connection Types**: Words connect through:
   - 🧠 **Semantic Association** - Related meanings
   - 🔤 **Letter Pattern Sharing** - Common letter sequences
@@ -14,19 +16,19 @@ An interactive word puzzle game where AI generates connected word graphs and pla
   - 📚 **Etymological/Root Connection** - Shared linguistic roots
 - **Interactive Canvas**: Beautiful grid-based interface with hover effects
 - **Smart Validation**: AI validates your solution and accepts creative logical connections
-- **Progressive Difficulty**: Start with 1/3 of words revealed, fill in the rest
+- **Progressive Difficulty**: Different reveal ratios based on difficulty level
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
 - Node.js (v16 or higher)
-- Anthropic Claude API key
+- OpenAI API key
 
 ### Installation
 
-1. **Get your Anthropic API key**
-   - Visit [Anthropic Console](https://console.anthropic.com/)
+1. **Get your OpenAI API key**
+   - Visit [OpenAI Platform](https://platform.openai.com/)
    - Create an account or sign in
    - Generate an API key
 
@@ -38,9 +40,9 @@ An interactive word puzzle game where AI generates connected word graphs and pla
 
 3. **Configure environment variables**
    
-   Edit the `.env` file and add your API key:
+   Create a `.env` file and add your API key:
    ```bash
-   ANTHROPIC_API_KEY=your_actual_api_key_here
+   OPENAI_API_KEY=your_actual_api_key_here
    PORT=3000
    ```
 
